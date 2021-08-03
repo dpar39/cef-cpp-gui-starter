@@ -12,8 +12,8 @@
 // Example: Advanced server
 //
 //------------------------------------------------------------------------------
+#include <malloc.h>
 
-#include <algorithm>
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/signal_set.hpp>
@@ -24,6 +24,8 @@
 #include <boost/beast/websocket.hpp>
 #include <boost/make_unique.hpp>
 #include <boost/optional.hpp>
+
+#include <algorithm>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
@@ -31,6 +33,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#include "Server.h"
 
 namespace beast = boost::beast; // from <boost/beast.hpp>
 namespace http = beast::http; // from <boost/beast/http.hpp>
@@ -414,7 +418,7 @@ private:
 
         // Apply a reasonable limit to the allowed size
         // of the body in bytes to prevent abuse.
-        parser_->body_limit(10000);
+        parser_->body_limit(1000000);
 
         // Set the timeout.
         stream_.expires_after(std::chrono::seconds(30));
@@ -573,7 +577,7 @@ private:
 };
 
 //------------------------------------------------------------------------------
-
+#if 0
 int main(int argc, char * argv[])
 {
     // Check command line arguments.
@@ -618,4 +622,27 @@ int main(int argc, char * argv[])
         t.join();
 
     return EXIT_SUCCESS;
+}
+#endif
+
+Server::Server(const std::string & listeningAddress, uint16_t port, const std::string & staticDir)
+{
+    const auto address = net::ip::make_address(listeningAddress.c_str());
+    const auto doc_root = std::make_shared<std::string>(staticDir);
+    _context = std::make_shared<boost::asio::io_context>(1);
+
+    // Create and launch a listening port
+    std::make_shared<listener>(*_context, tcp::endpoint { address, port }, doc_root)->run();
+
+    net::signal_set signals(*_context, SIGINT, SIGTERM);
+    signals.async_wait([&](beast::error_code const &, int) { _context->stop(); });
+
+    _runThread = std::thread([&]() { _context->run(); });
+}
+
+void Server::stop()
+{
+    _context->stop();
+    if (_runThread.joinable())
+        _runThread.join();
 }

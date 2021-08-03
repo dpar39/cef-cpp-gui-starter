@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 #include <algorithm>
+#include <cstdint>
 #include <string>
 #include <windows.h>
 
@@ -25,6 +26,8 @@
 #include "ClientHandler.h"
 #include "include/cef_app.h"
 #include "include/cef_browser.h"
+
+#include "Server.h"
 
 ClientHandler * g_handler = 0;
 
@@ -82,7 +85,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_PAINT:
             PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
+            /* HDC hdc = */ BeginPaint(hwnd, &ps);
             EndPaint(hwnd, &ps);
             return 0;
     }
@@ -96,11 +99,11 @@ HWND RegisterWindow(HINSTANCE hInstance, int nCmdShow)
 
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
-    wc.lpszClassName = "TestsDatabaseWindow";
+    wc.lpszClassName = L"TestsDatabaseWindow";
     RegisterClass(&wc);
     HWND hwnd = CreateWindowEx(0, // Optional window styles.
-                               "TestsDatabaseWindow", // Window class
-                               "CEF3 is HARD!", // Window text
+                               L"TestsDatabaseWindow", // Window class
+                               L"CEF3 is HARD!", // Window text
                                WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, // Window style
                                // Size and position
                                CW_USEDEFAULT,
@@ -134,13 +137,14 @@ HWND CreateMessageWindow(HINSTANCE hInstance)
     wc.cbSize = sizeof(wc);
     wc.lpfnWndProc = MessageWndProc;
     wc.hInstance = hInstance;
-    wc.lpszClassName = "ClientMessageWindow";
+    wc.lpszClassName = L"ClientMessageWindow";
     RegisterClassEx(&wc);
-    return CreateWindow("ClientMessageWindow", 0, 0, 0, 0, 0, 0, HWND_MESSAGE, 0, hInstance, 0);
+    return CreateWindow(L"ClientMessageWindow", 0, 0, 0, 0, 0, 0, HWND_MESSAGE, 0, hInstance, 0);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
+
     CefMainArgs main_args(hInstance);
 
     CefRefPtr<ClientApp> app(new ClientApp);
@@ -169,11 +173,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     CefBrowserSettings b_settings;
     CefRefPtr<CefClient> client(new ClientHandler);
     g_handler = (ClientHandler *)client.get();
-    std::string path = "file://" + GetApplicationDir() + "/html/index.html";
-    // std::string               path         = "https://www.google.com";
+
+    const std::uint16_t port = 9099;
 
     CefRefPtr<CefCommandLine> command_line = CefCommandLine::GetGlobalCommandLine();
 
+
+
+   // const auto server = std::make_shared<Server>("127.0.0.1", port, GetApplicationDir() + "/../gui/");
+
+     std::string path = "file://" + GetApplicationDir() + "/html/index.html";
+    //std::string path = "https://www.google.com";
+    // std::string path = std::string("http://127.0.0.1:") + std::to_string(port) + "/index.html";
     if (command_line->HasSwitch("url"))
     {
         path = command_line->GetSwitchValue("url");
@@ -206,7 +217,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
         hMessageWnd = NULL;
         result = static_cast<int>(msg.wParam);
     }
-
+  //  server->stop();
     CefShutdown();
     return result;
 }

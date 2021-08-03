@@ -8,12 +8,13 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/cef-gui.exe",
+            "program": "${workspaceFolder}/build_debug/cef-gui.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}/build_debug",
             "environment": [],
-            "console": "externalTerminal"
+            "console": "externalTerminal",
+            "preLaunchTask": "Build GUI (debug)"
         }
     ]
 }
