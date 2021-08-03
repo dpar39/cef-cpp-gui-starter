@@ -37,16 +37,18 @@ bool ClientHandler::DoClose(CefRefPtr<CefBrowser> browser)
 
 void ClientHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser)
 {
-    if (!m_Browser.get()) {
+    if (!m_Browser.get())
+    {
         // We need to keep the main child window, but not popup windows
-        m_Browser     = browser;
+        m_Browser = browser;
         m_BrowserHandle = browser->GetHost()->GetWindowHandle();
     }
 }
 
 void ClientHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser)
 {
-    if (m_BrowserHandle == browser->GetHost()->GetWindowHandle()) {
+    if (m_BrowserHandle == browser->GetHost()->GetWindowHandle())
+    {
         // Free the browser pointer so that the browser can be destroyed
         m_Browser = NULL;
     }
