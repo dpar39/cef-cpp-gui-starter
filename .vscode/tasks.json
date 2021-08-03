@@ -1,0 +1,56 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "windows": {
+        "options": {
+            "shell": {
+                "executable": "cmd.exe",
+                "args": [
+                    "/C",
+                    "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"",
+                    "&"
+                ]
+            }
+        }
+    },
+    "tasks": [
+        {
+            "label": "Build GUI (release)",
+            "type": "shell",
+            "command": "ninja -C ${workspaceFolder}/build_release",
+            "group": "build",
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "dependsOn": [
+                "CMake Generate (release)"
+            ]
+        },
+        {
+            "label": "CMake Generate (release)",
+            "type": "shell",
+            "command": "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -H${workspaceFolder} -B${workspaceFolder}/build_release -G Ninja",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build GUI (debug)",
+            "type": "shell",
+            "command": "ninja -C ${workspaceFolder}/build_debug",
+            "group": "build",
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "dependsOn": [
+                "CMake Generate (debug)"
+            ]
+        },
+        {
+            "label": "CMake Generate (debug)",
+            "type": "shell",
+            "command": "cmake -DCMAKE_BUILD_TYPE=Debug -H${workspaceFolder} -B${workspaceFolder}/build_debug -G Ninja -DUSE_SANDBOX=OFF",
+            "problemMatcher": []
+        }
+        
+    ]
+}
