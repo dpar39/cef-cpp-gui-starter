@@ -1,8 +1,12 @@
+// Copyright (c) 2013 The Chromium Embedded Framework Authors. All rights
+// reserved. Use of this source code is governed by a BSD-style license that
+// can be found in the LICENSE file.
+
 #include <windows.h>
 
 #include "include/cef_command_line.h"
 #include "include/cef_sandbox_win.h"
-#include "simple_app.h"
+#include "tests/cefsimple/simple_app.h"
 
 // When generating projects with CMake the CEF_USE_SANDBOX value will be defined
 // automatically if using the required compiler version. Pass -DUSE_SANDBOX=OFF
@@ -16,7 +20,6 @@
 #pragma comment(lib, "cef_sandbox.lib")
 #endif
 
-
 // Entry point function for all processes.
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
@@ -27,7 +30,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmd
     CefEnableHighDPISupport();
 
     void * sandbox_info = nullptr;
-
 
 #if defined(CEF_USE_SANDBOX)
     // Manage the life span of the sandbox information object. This is necessary
@@ -61,7 +63,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmd
         // Enable experimental Chrome runtime. See issue #2969 for details.
         settings.chrome_runtime = true;
     }
-
+ 
 #if !defined(CEF_USE_SANDBOX)
     settings.no_sandbox = true;
 #endif
@@ -69,7 +71,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmd
     // SimpleApp implements application-level callbacks for the browser process.
     // It will create the first browser instance in OnContextInitialized() after
     // CEF has initialized.
-                CefRefPtr<SimpleApp> app(new SimpleApp);
+    CefRefPtr<SimpleApp> app(new SimpleApp);
 
     // Initialize CEF.
     CefInitialize(main_args, settings, app.get(), sandbox_info);

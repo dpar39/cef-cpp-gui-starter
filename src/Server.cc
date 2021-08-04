@@ -540,6 +540,12 @@ public:
         }
     }
 
+    uint16_t port()
+    {
+        auto le = acceptor_.local_endpoint();
+        return le.port();
+    }
+
     // Start accepting incoming connections
     void run()
     {
@@ -576,73 +582,33 @@ private:
     }
 };
 
-//------------------------------------------------------------------------------
-#if 0
-int main(int argc, char * argv[])
-{
-    // Check command line arguments.
-    if (argc != 5)
-    {
-        std::cerr << "Usage: advanced-server <address> <port> <doc_root> <threads>\n"
-                  << "Example:\n"
-                  << "    advanced-server 0.0.0.0 8080 . 1\n";
-        return EXIT_FAILURE;
-    }
-    auto const address = net::ip::make_address(argv[1]);
-    auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
-    auto const doc_root = std::make_shared<std::string>(argv[3]);
-    auto const threads = std::max<int>(1, std::atoi(argv[4]));
-
-    // The io_context is required for all I/O
-    net::io_context ioc { threads };
-
-    // Create and launch a listening port
-    std::make_shared<listener>(ioc, tcp::endpoint { address, port }, doc_root)->run();
-
-    // Capture SIGINT and SIGTERM to perform a clean shutdown
-    net::signal_set signals(ioc, SIGINT, SIGTERM);
-    signals.async_wait([&](beast::error_code const &, int) {
-        // Stop the `io_context`. This will cause `run()`
-        // to return immediately, eventually destroying the
-        // `io_context` and all of the sockets in it.
-        ioc.stop();
-    });
-
-    // Run the I/O service on the requested number of threads
-    std::vector<std::thread> v;
-    v.reserve(threads - 1);
-    for (auto i = threads - 1; i > 0; --i)
-        v.emplace_back([&ioc] { ioc.run(); });
-    ioc.run();
-
-    // (If we get here, it means we got a SIGINT or SIGTERM)
-
-    // Block until all the threads exit
-    for (auto & t : v)
-        t.join();
-
-    return EXIT_SUCCESS;
-}
-#endif
-
-Server::Server(const std::string & listeningAddress, uint16_t port, const std::string & staticDir)
+Server::Server( const std::string & staticDir, const std::string & listeningAddress, uint16_t port)
 {
     const auto address = net::ip::make_address(listeningAddress.c_str());
     const auto doc_root = std::make_shared<std::string>(staticDir);
     _context = std::make_shared<boost::asio::io_context>(1);
 
     // Create and launch a listening port
-    std::make_shared<listener>(*_context, tcp::endpoint { address, port }, doc_root)->run();
-
-    net::signal_set signals(*_context, SIGINT, SIGTERM);
-    signals.async_wait([&](beast::error_code const &, int) { _context->stop(); });
-
+    auto l = std::make_shared<listener>(*_context, tcp::endpoint { address, port }, doc_root);
+    _port = l->port();
+    l->run();
     _runThread = std::thread([&]() { _context->run(); });
 }
 
+Server::~Server()
+{
+    stop();
+}
+
+
 void Server::stop()
 {
+    if (!_context)
+        return;
+
     _context->stop();
+
     if (_runThread.joinable())
         _runThread.join();
+    _context = nullptr;
 }

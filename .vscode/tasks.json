@@ -8,7 +8,7 @@
                 "executable": "cmd.exe",
                 "args": [
                     "/C",
-                    "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat\"",
+                    "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
                     "&"
                 ]
             }
@@ -30,7 +30,7 @@
         {
             "label": "CMake Generate (release)",
             "type": "shell",
-            "command": "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -H${workspaceFolder} -B${workspaceFolder}/build_release -G Ninja",
+            "command": "cmake -DCMAKE_BUILD_TYPE=Release -H${workspaceFolder} -B${workspaceFolder}/build_release -G Ninja -DUSE_SANDBOX=OFF",
             "problemMatcher": []
         },
         {
@@ -51,6 +51,5 @@
             "command": "cmake -DCMAKE_BUILD_TYPE=Debug -H${workspaceFolder} -B${workspaceFolder}/build_debug -G Ninja -DUSE_SANDBOX=OFF",
             "problemMatcher": []
         }
-        
     ]
 }
