@@ -16,7 +16,6 @@
 #pragma comment(lib, "cef_sandbox.lib")
 #endif
 
-
 // Entry point function for all processes.
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
@@ -27,7 +26,6 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmd
     CefEnableHighDPISupport();
 
     void * sandbox_info = nullptr;
-
 
 #if defined(CEF_USE_SANDBOX)
     // Manage the life span of the sandbox information object. This is necessary
@@ -69,7 +67,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmd
     // SimpleApp implements application-level callbacks for the browser process.
     // It will create the first browser instance in OnContextInitialized() after
     // CEF has initialized.
-                CefRefPtr<SimpleApp> app(new SimpleApp);
+    CefRefPtr<SimpleApp> app(new SimpleApp);
 
     // Initialize CEF.
     CefInitialize(main_args, settings, app.get(), sandbox_info);

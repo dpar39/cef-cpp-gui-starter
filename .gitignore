@@ -1,4 +1,5 @@
 /build
+/build_vs
 /build_debug
 /build_release
 /thirdparty/*

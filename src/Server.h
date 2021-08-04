@@ -16,15 +16,12 @@ class Server
 {
 
 public:
-    Server(const std::string & staticDir, const std::string & listeningAddress = "127.0.0.1", uint16_t port = 0);
+    Server(const std::string & dokRoot, const std::string & listeningAddress = "127.0.0.1", uint16_t port = 0);
     void stop();
 
     ~Server();
 
-    uint16_t getTcpPort() const
-    {
-        return _port;
-    }
+    uint16_t getTcpPort() const;
 
 private:
     std::shared_ptr<boost::asio::io_context> _context;
