@@ -1,0 +1,75 @@
+
+#include "Server.h"
+#include <memory>
+
+#include <malloc.h>
+#include <stdint.h>
+#include <streambuf>
+
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4456)
+#define CROW_MAIN
+#include "crow/crow_all.h"
+
+#include <filesystem>
+
+class CrowApp : public crow::Crow<>
+{
+public:
+    uint16_t getPort() const
+    {
+        return server_->getPort();
+    }
+};
+
+Server::Server(std::string docRoot, const std::string & listeningAddress, uint16_t port)
+{
+    const auto len = docRoot.size();
+    if (!docRoot.empty() && (docRoot[len - 1] != '/' && docRoot[len - 1] != '\\'))
+        docRoot.push_back('/');
+    _crowApp = std::make_shared<CrowApp>();
+    auto & app = *_crowApp;
+
+    CROW_ROUTE(app, "/")
+    ([docRoot](const crow::request & /*req*/, crow::response & res) {
+        res.set_static_file_info(docRoot + "index.html");
+        res.end();
+    });
+
+    CROW_CATCHALL_ROUTE(app)
+    ([docRoot](const crow::request & req, crow::response & res) {
+        if (req.url.empty() || req.url.find("..") != std::string::npos)
+        {
+            return;
+        }
+        const auto fpath = docRoot + req.url;
+        if (std::filesystem::exists(fpath))
+        {
+            res.set_static_file_info(fpath);
+            res.end();
+        }
+    });
+
+    _crowApp->port(port).bindaddr(listeningAddress).multithreaded().concurrency(8);
+
+    _runThread = std::thread([&]() { _crowApp->run(); });
+}
+
+uint16_t Server::getTcpPort() const
+{
+    return _crowApp->getPort();
+}
+void Server::stop()
+{
+    if (!_crowApp)
+        return;
+    _crowApp->stop();
+    if (_runThread.joinable())
+        _runThread.join();
+    _crowApp = nullptr;
+}
+
+Server::~Server()
+{
+    stop();
+}

@@ -6,18 +6,10 @@ project(${CEF_TARGET} CXX)
 set_property(GLOBAL PROPERTY OS_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/thirdparty")
 
 # Add this project's cmake/ directory to the module path.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-#
-# Boost configuration.
-#
-set(BOOST_VERSION 1.76.0)
-include(DownloadBoost)
-DownloadBoost(${BOOST_VERSION} "${CMAKE_SOURCE_DIR}/thirdparty/boost") 
-add_definitions(-DBOOST_ASIO_STANDALONE)
-find_package(Boost REQUIRED)
 
 #
 # CEF configuration.
@@ -47,31 +39,56 @@ DownloadCEF("${CEF_PLATFORM}" "${CEF_VERSION}" "${CMAKE_SOURCE_DIR}/thirdparty/c
 list(APPEND CMAKE_MODULE_PATH "${CEF_ROOT}/cmake")
 find_package(CEF REQUIRED)
 
-# Support specification of the Python executable path via the command-line.
-if(DEFINED ENV{PYTHON_EXECUTABLE})
-  file(TO_CMAKE_PATH "$ENV{PYTHON_EXECUTABLE}" PYTHON_EXECUTABLE)
-endif()
+# Display configuration settings.
+PRINT_CEF_CONFIG()
 
-if(NOT PYTHON_EXECUTABLE)
-  unset(PYTHON_EXECUTABLE)
-  find_package(PythonInterp)
-  if(NOT ${PYTHONINTERP_FOUND})
-    message(FATAL_ERROR "A Python installation is required. Set the "
-                        "PYTHON_EXECUTABLE environment variable to explicitly "
-                        "specify the Python executable path.")
-  endif()
-endif()
-message(STATUS "Using Python: ${PYTHON_EXECUTABLE}")
 
+#
+# Boost configuration
+#
+set(BOOST_VERSION 1.76.0)
+add_definitions(-DBOOST_DATE_TIME_NO_LIB)
+include(DownloadBoost)
+DownloadBoost(${BOOST_VERSION} "${CMAKE_SOURCE_DIR}/thirdparty/boost") 
+find_package(Boost REQUIRED)
+include_directories(${BOOST_ROOT})
 
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj")
 endif()
+
+#
+# Protobuf
+#
+include(ExternalProtobuf)
+ResolveProtobuf("3.17.3" ${THIRD_PARTY_DIR})
+
+
+#
+# Make a HTTP/Webasocket server library
+#
+set(HTTP_WS_LIB_NAME server)
+set(SERVER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/server/")
+file(GLOB SERVER_LIB_CC_FILES "${SERVER_SRC_DIR}/*.cc")
+include_directories("${SERVER_SRC_DIR}")
+add_library(${HTTP_WS_LIB_NAME} ${SERVER_LIB_CC_FILES})
+SET_LIBRARY_TARGET_PROPERTIES(${HTTP_WS_LIB_NAME})
+target_link_libraries(${HTTP_WS_LIB_NAME} )
+#
+# Add tests for HTTP/Webasocket server library
+#
+# include(ExternalGTest)
+# ResolveGTest("1.11.0" ${THIRD_PARTY_DIR})
+# set(TESTS_EXE_NAME ${HTTP_WS_LIB_NAME}_tests)
+# file(GLOB TEST_CC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/test/*.cc")
+# add_executable(${TESTS_EXE_NAME} ${TEST_CC_FILES})
+# target_link_libraries(${TESTS_EXE_NAME} GTest::gtest GTest::gtest_main ${HTTP_WS_LIB_NAME})
+
+
 # Include the libcef_dll_wrapper target (executes libcef_dll/CMakeLists.txt).
 add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
 
-# Display configuration settings.
-PRINT_CEF_CONFIG()
+
 
 if(OS_MAC)
   set(CEF_HELPER_TARGET "cefsimple_Helper")
@@ -83,28 +100,27 @@ endif()
 
 SET_CEF_TARGET_OUT_DIR()
 
-include_directories(${BOOST_ROOT})
+set(CLIENT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/client/")
 include_directories(${CEF_INCLUDE_PATH})
-file(GLOB_RECURSE LIB_CC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")
+include_directories(${CLIENT_SRC_DIR})
+file(GLOB_RECURSE APP_CC_FILES "${CLIENT_SRC_DIR}/*.cc")
 
 if(OS_WINDOWS)
-  set(WIN_RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/cef-gui.rc")
-  set_property(SOURCE ${WIN_RC_FILE} APPEND PROPERTY
-        OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/res/cefsimple.ico
-        )
+  set(WIN_RC_FILE "${CLIENT_SRC_DIR}/cef-gui.rc")
+  set_property(SOURCE ${WIN_RC_FILE} APPEND PROPERTY 
+    OBJECT_DEPENDS "${CLIENT_SRC_DIR}/res/cefsimple.ico"
+  )
 
-  add_executable(${CEF_TARGET} WIN32 ${LIB_CC_FILES} ${WIN_RC_FILE})
-  add_dependencies(${CEF_TARGET} libcef_dll_wrapper)
+  add_executable(${CEF_TARGET} WIN32 ${APP_CC_FILES} ${WIN_RC_FILE})
+  add_dependencies(${CEF_TARGET} libcef_dll_wrapper ${HTTP_WS_LIB_NAME})
   SET_EXECUTABLE_TARGET_PROPERTIES(${CEF_TARGET})
-  #target_link_libraries(${CEF_TARGET} ${CEF_LIB} ${CEF_STANDARD_LIBS} ${Boost_LIBRARIES} libcef_dll_wrapper)
-  target_link_libraries(${CEF_TARGET} libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
+  target_link_libraries(${CEF_TARGET} libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS} ${HTTP_WS_LIB_NAME})
 
   if(USE_SANDBOX)
     ADD_LOGICAL_TARGET("cef_sandbox_lib" "${CEF_SANDBOX_LIB_DEBUG}" "${CEF_SANDBOX_LIB_RELEASE}")
     target_link_libraries(${CEF_TARGET} cef_sandbox_lib ${CEF_SANDBOX_STANDARD_LIBS})
   endif()
-
-  ADD_WINDOWS_MANIFEST("${CMAKE_CURRENT_SOURCE_DIR}/src" "${CEF_TARGET}" "exe")
+  ADD_WINDOWS_MANIFEST("${CLIENT_SRC_DIR}" "${CEF_TARGET}" "exe")
 endif()
 
 COPY_FILES("${CEF_TARGET}" "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "${CEF_TARGET_OUT_DIR}")

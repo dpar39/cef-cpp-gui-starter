@@ -499,7 +499,7 @@ class Listener : public std::enable_shared_from_this<Listener>
     std::string _docRoot;
 
 public:
-    Listener(net::io_context & ioc, tcp::endpoint endPoint, std::string  docRoot)
+    Listener(net::io_context & ioc, tcp::endpoint endPoint, std::string docRoot)
     : _ioc(ioc)
     , _acceptor(net::make_strand(ioc))
     , _docRoot(std::move(docRoot))
@@ -581,7 +581,7 @@ private:
     }
 };
 
-Server::Server(const std::string & docRoot, const std::string & listeningAddress, uint16_t port)
+Server::Server(std::string docRoot, const std::string & listeningAddress, uint16_t port)
 {
     const auto address = net::ip::make_address(listeningAddress.c_str());
     _context = std::make_shared<boost::asio::io_context>(1);

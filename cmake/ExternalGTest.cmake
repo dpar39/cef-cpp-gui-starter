@@ -1,0 +1,62 @@
+function(ResolveGTest PKG_VERSION THIRD_PARTY_DIR)
+
+set(PKG_NAME GTest)
+string(TOLOWER ${CMAKE_BUILD_TYPE} BUILD_CONFIG_LOWER)
+string(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME_LOWER)
+set(BUILD_NAME_SUFFIX ${SYSTEM_NAME_LOWER}_${BUILD_CONFIG_LOWER})
+set(THIRD_PARTY_INSTALL_DIR ${THIRD_PARTY_DIR}/install_${BUILD_NAME_SUFFIX})
+
+set(DOWNLOAD_URL "https://github.com/google/googletest/archive/refs/tags/release-${PKG_VERSION}.tar.gz")
+set(DOWNLOAD_ARCHIVE "${THIRD_PARTY_DIR}/googletest-release-${PKG_VERSION}.tar.gz")
+set(EXTRACT_DIR "${THIRD_PARTY_DIR}/googletest-release-${PKG_VERSION}")
+set(SOURCE_DIR ${EXTRACT_DIR})
+
+set(THIRD_PARTY_BUILD_DIR ${EXTRACT_DIR}/build_${BUILD_NAME_SUFFIX})
+
+# Download archive if it doesn't exist
+if(NOT EXISTS "${DOWNLOAD_ARCHIVE}")
+  message(STATUS "Downloading ${DOWNLOAD_URL} to ${DOWNLOAD_ARCHIVE}...")
+  file(DOWNLOAD "${DOWNLOAD_URL}" "${DOWNLOAD_ARCHIVE}" SHOW_PROGRESS)
+endif()
+
+# Extract archive
+if(NOT EXISTS "${EXTRACT_DIR}")
+  message(STATUS "Extracting ${DOWNLOAD_ARCHIVE}...")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E tar xzf "${DOWNLOAD_ARCHIVE}"
+    WORKING_DIRECTORY ${THIRD_PARTY_DIR}
+  )
+endif()
+
+if(NOT EXISTS "${THIRD_PARTY_INSTALL_DIR}/lib/cmake/GTest/GTestConfig.cmake")
+  # Build archive
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} ${SOURCE_DIR}
+    -G ${CMAKE_GENERATOR}
+    -B${THIRD_PARTY_BUILD_DIR}
+    -DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_DIR}
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_C_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_AR=${CMAKE_AR}
+    -DBUILD_SHARED_LIBS:BOOL=OFF
+    -Dgtest_force_shared_crt=OFF
+  )
+  execute_process(COMMAND ${CMAKE_COMMAND} --build ${THIRD_PARTY_BUILD_DIR})
+  execute_process(COMMAND ${CMAKE_COMMAND} --install ${THIRD_PARTY_BUILD_DIR})
+endif()
+
+find_package(${PKG_NAME} HINTS ${THIRD_PARTY_INSTALL_DIR})
+
+unset(PKG_NAME)
+unset(BUILD_CONFIG_LOWER)
+unset(SYSTEM_NAME_LOWER)
+unset(BUILD_NAME_SUFFIX)
+unset(THIRD_PARTY_BUILD_DIR)
+unset(SOURCE_DIR)
+unset(EXTRACT_DIR)
+unset(DOWNLOAD_ARCHIVE)
+unset(DOWNLOAD_URL)
+
+endfunction()
+

@@ -1,3 +1,5 @@
 {
     "cmake.generator": "Ninja",
+    "cmake.configureOnEdit": false,
+    "cmake.configureOnOpen": false
 }
