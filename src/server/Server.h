@@ -7,22 +7,18 @@
 #include <string>
 #include <thread>
 
+class Response;
+using ResponsePtr = std::shared_ptr<Response>;
+
+class Request;
+using RequestPtr = std::shared_ptr<Request>;
+
 namespace boost::asio
 {
 class io_context;
 }
 
-class CrowApp;
-
 class StopSignalSet;
-
-struct Parameter
-{
-    std::string str;
-    double doubleValue { 0 };
-};
-
-using MessageCallback = std::function<std::string(Parameter)>;
 
 class Server
 {
@@ -35,15 +31,14 @@ public:
 
     void stop();
 
-    ~Server();
+    virtual ~Server();
 
     uint16_t getTcpPort() const;
 
-    void registerMessage(const std::string & messageName, MessageCallback cb);
+    virtual ResponsePtr onInvoke(const RequestPtr & req);
 
 private:
     std::shared_ptr<boost::asio::io_context> _context;
-    std::shared_ptr<CrowApp> _crowApp;
     std::shared_ptr<StopSignalSet> _stopSignalSet;
 
     std::thread _runThread;
