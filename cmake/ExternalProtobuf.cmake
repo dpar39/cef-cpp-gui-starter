@@ -44,8 +44,7 @@ if(NOT EXISTS "${THIRD_PARTY_INSTALL_DIR}/cmake/protobuf-config.cmake")
   execute_process(COMMAND ${CMAKE_COMMAND} --install ${THIRD_PARTY_BUILD_DIR})
 endif()
 
-set(Protobuf_DIR ${THIRD_PARTY_INSTALL_DIR})
-find_package(${PKG_NAME} REQUIRED HINTS ${THIRD_PARTY_INSTALL_DIR}/cmake)
+list(APPEND CMAKE_PREFIX_PATH "${THIRD_PARTY_INSTALL_DIR}")
 
 unset(PKG_NAME)
 unset(BUILD_CONFIG_LOWER)

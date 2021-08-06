@@ -30,7 +30,7 @@
         {
             "label": "CMake Generate (release)",
             "type": "shell",
-            "command": "cmake -DCMAKE_BUILD_TYPE=Release -H${workspaceFolder} -B${workspaceFolder}/build_release -G Ninja -DUSE_SANDBOX=OFF",
+            "command": "cmake -DCMAKE_BUILD_TYPE=Release -H${workspaceFolder} -B${workspaceFolder}/build_release -G Ninja",
             "problemMatcher": []
         },
         {
@@ -48,7 +48,7 @@
         {
             "label": "CMake Generate (debug)",
             "type": "shell",
-            "command": "cmake -DCMAKE_BUILD_TYPE=Debug -H${workspaceFolder} -B${workspaceFolder}/build_debug -G Ninja -DUSE_SANDBOX=OFF",
+            "command": "cmake -DCMAKE_BUILD_TYPE=Debug -H${workspaceFolder} -B${workspaceFolder}/build_debug -G Ninja",
             "problemMatcher": []
         }
     ]

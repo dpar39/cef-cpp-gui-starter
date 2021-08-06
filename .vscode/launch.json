@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Windows) Launch",
+            "name": "server.exe (Windows)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build_debug/Debug/cef-gui.exe",
+            "program": "${workspaceFolder}/build_debug/server.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build_debug/Debug",
+            "cwd": "${workspaceFolder}/build_debug",
             "environment": [],
             "preLaunchTask": "Build GUI (debug)"
         }

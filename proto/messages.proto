@@ -1,0 +1,28 @@
+
+syntax = "proto3";
+
+package reqres;
+
+
+message FileInfo {
+    string name = 1;
+    uint64 size = 2;
+    bool isfile = 3;
+    repeated FileInfo children = 4;
+}
+
+message ListDirectoryReq {
+    int32 id = 1;
+    string directory = 2;
+    int32 numlevels = 3;
+}
+
+
+message ListDirectoryRes {
+    int32 id = 1;
+    repeated FileInfo nodes = 2;
+}
+
+
+
+

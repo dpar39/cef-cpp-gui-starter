@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -581,6 +581,19 @@ private:
     }
 };
 
+class StopSignalSet : public net::signal_set
+{
+public:
+    StopSignalSet(const std::shared_ptr<boost::asio::io_context> & ioc)
+    : net::signal_set(*ioc, SIGINT, SIGTERM)
+    {
+        async_wait([&](beast::error_code const &, int) {
+            if (ioc && !ioc->stopped())
+                ioc->stop();
+        });
+    }
+};
+
 Server::Server(std::string docRoot, const std::string & listeningAddress, uint16_t port)
 {
     const auto address = net::ip::make_address(listeningAddress.c_str());
@@ -589,8 +602,21 @@ Server::Server(std::string docRoot, const std::string & listeningAddress, uint16
     // Create and launch a listening port
     auto l = std::make_shared<Listener>(*_context, tcp::endpoint { address, port }, docRoot);
     _port = l->port();
+    _address = listeningAddress;
     l->run();
-    _runThread = std::thread([&]() { _context->run(); });
+    _stopSignalSet = std::make_shared<StopSignalSet>(_context);
+}
+
+void Server::runAsync()
+{
+    _runThread = std::thread([&]() { run(); });
+}
+
+void Server::run()
+{
+    std::cout << "Server running on http://" << _address << ":" << _port << std::endl;
+    _context->run();
+    std::cout << "Server stopped" << std::endl;
 }
 
 Server::~Server()
@@ -605,12 +631,9 @@ uint16_t Server::getTcpPort() const
 
 void Server::stop()
 {
-    if (!_context)
+    if (_context->stopped())
         return;
-
     _context->stop();
-
     if (_runThread.joinable())
         _runThread.join();
-    _context = nullptr;
 }
