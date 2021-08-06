@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "HttpSession.h"
+#include "WebsocketSession.h"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -30,6 +33,7 @@ public:
     void run();
 
     void stop();
+    void onWebsocketConnection(const WebsocketSessionPtr & ws);
 
     virtual ~Server();
 
@@ -44,4 +48,6 @@ private:
     std::thread _runThread;
     std::uint16_t _port;
     std::string _address;
+
+    std::vector<std::thread> _extraThreads;
 };

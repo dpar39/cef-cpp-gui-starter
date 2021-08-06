@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "ServerCommon.h"
 #include "common.h"
+
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -27,13 +29,15 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
     const std::string _docRoot;
     QueuePtr _queue;
 
+    OnWebsocketUpgrade _cb;
+
     // The parser is stored in an optional container so we can
     // construct it from scratch it at the beginning of each new message.
-    boost::optional<http::request_parser<http::string_body>> parser_;
+    boost::optional<http::request_parser<http::string_body>> _parser;
 
 public:
     // Take ownership of the socket
-    HttpSession(tcp::socket && socket, const std::string & docRoot);
+    HttpSession(tcp::socket && socket, const std::string & docRoot, OnWebsocketUpgrade cb);
 
     // Start the session
     void run();
@@ -43,14 +47,7 @@ private:
 
     void onRead(beast::error_code ec, std::size_t bytesTransferred);
 
-    void onWrite(bool close, boost::beast::error_code ec, std::size_t bytesTransferred);
+    void onWrite(bool close, beast::error_code ec, std::size_t bytesTransferred);
 
-    void doClose()
-    {
-        // Send a TCP shutdown
-        boost::beast::error_code ec;
-        _stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
-
-        // At this point the connection is closed gracefully
-    }
+    void doClose();
 };

@@ -1,7 +1,9 @@
 ﻿#pragma once
-#include "common.h"
+#include "ServerCommon.h"
+
 #include <boost/beast/core/tcp_stream.hpp>
 #include <boost/beast/websocket/stream.hpp>
+#include <deque>
 
 FWD_DECL(WebSocketSession)
 
@@ -15,9 +17,10 @@ class WebsocketSession : public std::enable_shared_from_this<WebsocketSession>
 {
     websocket::stream<beast::tcp_stream> _ws;
     beast::flat_buffer _readBuffer;
-    beast::flat_buffer _writeBuffer;
+    std::deque<StringSP> _queue;
 
-    std::function<void(beast::flat_buffer &)> onReadCallback;
+public:
+    std::function<void(beast::flat_buffer &)> onMessage;
 
 public:
     // Take ownership of the socket
@@ -39,7 +42,11 @@ public:
         _ws.async_accept(req, beast::bind_front_handler(&WebsocketSession::onAccept, shared_from_this()));
     }
 
+    void send(const StringSP & ss);
+
 private:
+    void onSend(const StringSP & ss);
+
     void onAccept(beast::error_code ec);
 
     void doRead();

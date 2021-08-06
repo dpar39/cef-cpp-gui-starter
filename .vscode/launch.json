@@ -5,7 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "server.exe (Windows)",
+            "name": "Node.js: client tests",
+            "program": "${workspaceFolder}/src/test/test.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },        
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Jest Tests",
+            "program": "${workspaceRoot}\\node_modules\\jest\\bin\\jest.js",
+            "args": [
+            "--silent=false", "--verbose",  "src/test/"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
+        }
+        {
+            "name": "C++: server.exe (Windows)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build_debug/server.exe",

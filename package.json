@@ -1,0 +1,20 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "description": "Tests comminication with C++ Websocket server from javascript",
+  "main": "client.js",
+  "scripts": {
+    "test": "jest --silent=false --verbose src/test/"
+  },
+  "author": "Darien Pardinas Diaz",
+  "license": "ISC",
+  "dependencies": {
+    "jest": "^27.0.6"
+  },
+  "devDependencies": {
+    "ps-node": "^0.1.6"
+  },
+  "testMatch": [
+    "*src/test.js"
+  ]
+}

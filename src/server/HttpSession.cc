@@ -258,10 +258,11 @@ public:
     }
 };
 
-HttpSession::HttpSession(tcp::socket && socket, const std::string & docRoot)
+HttpSession::HttpSession(tcp::socket && socket, const std::string & docRoot, OnWebsocketUpgrade cb)
 : _stream(std::move(socket))
 , _docRoot(docRoot)
 , _queue(std::make_shared<Queue>(*this))
+, _cb(std::move(cb))
 {
 }
 
@@ -277,17 +278,17 @@ void HttpSession::run()
 void HttpSession::doRead()
 {
     // Construct a new parser for each message
-    parser_.emplace();
+    _parser.emplace();
 
     // Apply a reasonable limit to the allowed size
     // of the body in bytes to prevent abuse.
-    parser_->body_limit(1000000);
+    _parser->body_limit(1000000);
 
     // Set the timeout.
     _stream.expires_after(std::chrono::seconds(30));
 
     // Read a request using the parser-oriented interface
-    http::async_read(_stream, _buffer, *parser_, beast::bind_front_handler(&HttpSession::onRead, shared_from_this()));
+    http::async_read(_stream, _buffer, *_parser, beast::bind_front_handler(&HttpSession::onRead, shared_from_this()));
 }
 
 void HttpSession::onRead(beast::error_code ec, std::size_t bytesTransferred)
@@ -302,16 +303,21 @@ void HttpSession::onRead(beast::error_code ec, std::size_t bytesTransferred)
         return fail(ec, "read");
 
     // See if it is a WebSocket Upgrade
-    if (websocket::is_upgrade(parser_->get()))
+    if (websocket::is_upgrade(_parser->get()))
     {
         // Create a websocket session, transferring ownership
         // of both the socket and the HTTP request.
-        std::make_shared<WebsocketSession>(_stream.release_socket())->doAccept(parser_->release());
+        const auto session = std::make_shared<WebsocketSession>(_stream.release_socket());
+        session->doAccept(_parser->release());
+        if (_cb)
+        {
+            _cb(session);
+        }
         return;
     }
 
     // Send the response
-    handleHttpRequest(_docRoot, parser_->release(), *_queue);
+    handleHttpRequest(_docRoot, _parser->release(), *_queue);
 
     // If we aren't at the queue limit, try to pipeline another request
     if (!_queue->isFull())
@@ -338,4 +344,13 @@ void HttpSession::onWrite(bool close, beast::error_code ec, std::size_t bytesTra
         // Read another request
         doRead();
     }
+}
+
+void HttpSession::doClose()
+{
+    // Send a TCP shutdown
+    beast::error_code ec;
+    _stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+
+    // At this point the connection is closed gracefully
 }

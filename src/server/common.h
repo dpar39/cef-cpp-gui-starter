@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <memory>
+#include <string>
 
 #define FWD_DECL(Type)                                                                                                 \
     class Type;                                                                                                        \

@@ -3,6 +3,7 @@
 #include "ServerCommon.h"
 
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
+namespace net = boost::asio;
 
 WebsocketSession::WebsocketSession(tcp::socket && socket)
 : _ws(std::move(socket))
@@ -30,32 +31,54 @@ void WebsocketSession::onRead(beast::error_code ec, std::size_t bytesTransferred
 
     // This indicates that the websocket_session was closed
     if (ec == websocket::error::closed)
+    {
+        onMessage = nullptr;
         return;
+    }
 
     if (ec)
+    {
         fail(ec, "read");
+        return;
+    }
 
-    if (onReadCallback)
-        onReadCallback(_readBuffer);
+    if (onMessage)
+        onMessage(_readBuffer);
 
-    _writeBuffer = _readBuffer;
+    _readBuffer.consume(_readBuffer.size());
     doRead();
-
-    // Echo the message
-    _ws.text(_ws.got_text());
-    _ws.async_write(_writeBuffer.data(), beast::bind_front_handler(&WebsocketSession::onWrite, shared_from_this()));
 }
 
-void WebsocketSession::onWrite(beast::error_code ec, std::size_t bytesTransferred)
+void WebsocketSession::send(const StringSP & ss)
 {
-    boost::ignore_unused(bytesTransferred);
+    net::post(_ws.get_executor(), beast::bind_front_handler(&WebsocketSession::onSend, shared_from_this(), ss));
+}
 
+void WebsocketSession::onSend(const StringSP & ss)
+{
+    // Always add to queue
+    _queue.push_back(ss);
+
+    // Are we already writing?
+    if (_queue.size() > 1)
+        return;
+
+    // We are not currently writing, so send this immediately
+    _ws.async_write(net::buffer(*_queue.front()),
+                    beast::bind_front_handler(&WebsocketSession::onWrite, shared_from_this()));
+}
+
+void WebsocketSession::onWrite(beast::error_code ec, std::size_t)
+{
+    // Handle the error, if any
     if (ec)
         return fail(ec, "write");
 
-    // Clear the buffer
-    _readBuffer.consume(_readBuffer.size());
+    // Remove the string from the queue
+    _queue.pop_front();
 
-    // Do another read
-    doRead();
+    // Send the next message if any
+    if (!_queue.empty())
+        _ws.async_write(net::buffer(*_queue.front()),
+                        beast::bind_front_handler(&WebsocketSession::onWrite, shared_from_this()));
 }
