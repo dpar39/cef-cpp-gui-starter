@@ -3,6 +3,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const ps = require('ps-node');
+const protobuf = require('protobufjs')
 
 let serverProcess = null;
 // function isServerRunning() {
@@ -24,7 +25,7 @@ let serverProcess = null;
 //     });
 // }
 
-function findServerExe(suffix) {
+function resolveFilePath(suffix) {
     let dir = __dirname;
     while (true) {
         let exe_path = dir + '/' + suffix;
@@ -41,9 +42,9 @@ function findServerExe(suffix) {
 
 function startServer() {
     return new Promise(async (accept, reject) => {
-        let isRunning = false; //await isServerRunning();
+        let isRunning = true; //await isServerRunning();
         if (!isRunning) {
-            const exePath = findServerExe('build_vs/server.exe');
+            const exePath = resolveFilePath('build_vs/server.exe');
             console.log(`Spawning ${exePath}`)
             serverProcess = spawn(exePath);
             let accepted = false;
@@ -60,12 +61,26 @@ function startServer() {
     });
 }
 
-console.log(findServerExe('build_vs/server.exe'))
+console.log(resolveFilePath('build_vs/server.exe'))
+
+function loadProtobuf() {
+    return new Promise((accept, reject) => {
+        protobuf.load('proto/messages.proto', (err, root) => {
+            if (err) {
+                reject(err);
+            } else {
+                accept(root);
+            }
+        });
+    });
+}
 
 describe("Comms test suite", () => {
+    let pb = null;
     beforeAll(async () => {
         console.log('Ready to start');
         await startServer();
+        pb = await loadProtobuf();
     });
 
     afterAll(() => {
@@ -77,29 +92,46 @@ describe("Comms test suite", () => {
     test("Test1", (done) => {
         console.log('test goes here');
 
+        let Request = pb.lookupType('comms.Request');
+        let Response = pb.lookupType('comms.Response');
+
         const WebSocket = require('ws')
         const url = 'ws://localhost:8100'
         const connection = new WebSocket(url)
+        connection.binaryType = (typeof window === 'undefined') ? 'nodebuffer' : 'arraybuffer';
 
         connection.onopen = () => {
-            for (let i = 0; i < 100; ++i)
-                connection.send(`Message From Client ${i}`)
+            // for (let i = 0; i < 100; ++i)
+            //     connection.send(`Message From Client ${i}`)
+
+
+            let req = { id: 123, listDir: { directory: '.' } }
+
+            var errMsg = Request.verify(req);
+            if (errMsg)
+                throw Error(errMsg)
+            let reqMsg = Request.create(req);
+            console.log(reqMsg)
+            let buffer = Request.encode(reqMsg).finish();
+            connection.send(buffer)
+
         }
 
         connection.onerror = (error) => {
-            console.log(`WebSocket error: ${error}`)
+            console.log(`WebSocket error: ${error.message}`)
         }
 
         let k = 0;
         connection.onmessage = (e) => {
-            console.log(e.data)
-            ++k;
-            if (k == 100) {
-                connection.close();
-                done();
-            }
+
+            let res = Response.decode(e.data);
+            console.log(JSON.stringify(res));
+            connection.close();
+        };
+
+        connection.onclose = () =>{
+            done();
         };
     });
 
 });
-

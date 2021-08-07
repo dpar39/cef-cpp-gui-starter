@@ -64,6 +64,7 @@ void WebsocketSession::onSend(const StringSP & ss)
         return;
 
     // We are not currently writing, so send this immediately
+    _ws.binary(true);
     _ws.async_write(net::buffer(*_queue.front()),
                     beast::bind_front_handler(&WebsocketSession::onWrite, shared_from_this()));
 }

@@ -14,6 +14,7 @@
 //------------------------------------------------------------------------------
 
 #include <boost/asio/signal_set.hpp>
+#include <google/protobuf/util/json_util.h>
 
 #include <iostream>
 #include <memory>
@@ -25,6 +26,7 @@
 #include "HttpSession.h"
 #include "ServerCommon.h"
 #include "TcpListener.h"
+#include "messages.pb.h"
 
 namespace net = boost::asio; // from <boost/asio.hpp>
 
@@ -84,29 +86,43 @@ uint16_t Server::getTcpPort() const
     return _port;
 }
 
-ResponsePtr Server::onInvoke(const RequestPtr & req)
-{
-    return nullptr;
-}
-
 void Server::stop()
 {
-    if (_context->stopped())
-        return;
-    _context->stop();
     if (_runThread.joinable())
         _runThread.join();
     for (auto & t : _extraThreads)
         if (t.joinable())
             t.join();
+    if (_context->stopped())
+        return;
+    _context->stop();
 }
 
 void Server::onWebsocketConnection(const WebsocketSessionPtr & ws)
 {
     ws->onMessage = [ws](beast::flat_buffer & buffer) {
-        std::string s = beast::buffers_to_string(buffer.data());
-        std::cout << s << std::endl;
-        ws->send(toStringSP(s + " back!!"));
+        using namespace comms;
+        Request req;
+        const auto & x = buffer.data();
+        req.ParseFromArray(x.data(), x.size());
+
+        std::string json;
+        google::protobuf::util::MessageToJsonString(req, &json);
+        std::cout << json << std::endl;
+
+        Response res;
+        res.set_id(req.id());
+
+        auto * ld = new ListDirectoryRes();
+        auto n = ld->add_nodes();
+        n->set_isfile(true);
+        n->set_size(4567);
+        n->set_name("this-file.txt");
+
+        res.set_allocated_list_dir(ld);
+        std::stringstream ss;
+        res.SerializeToOstream(&ss);
+        ws->send(toStringSP(ss.str()));
     };
 
     // ws->send(toStringSP("Connection established"));

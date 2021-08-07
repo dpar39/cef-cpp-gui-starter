@@ -10,11 +10,6 @@
 #include <string>
 #include <thread>
 
-class Response;
-using ResponsePtr = std::shared_ptr<Response>;
-
-class Request;
-using RequestPtr = std::shared_ptr<Request>;
 
 namespace boost::asio
 {
@@ -39,7 +34,6 @@ public:
 
     uint16_t getTcpPort() const;
 
-    virtual ResponsePtr onInvoke(const RequestPtr & req);
 
 private:
     std::shared_ptr<boost::asio::io_context> _context;

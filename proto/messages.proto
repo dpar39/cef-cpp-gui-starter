@@ -1,28 +1,39 @@
-
 syntax = "proto3";
 
-package reqres;
+package comms;
 
-
-message FileInfo {
+message FileInfo
+{
     string name = 1;
     uint64 size = 2;
     bool isfile = 3;
     repeated FileInfo children = 4;
 }
 
-message ListDirectoryReq {
-    int32 id = 1;
-    string directory = 2;
-    int32 numlevels = 3;
+message ListDirectoryReq
+{
+    string directory = 1;
+    uint64 num_levels = 2;
 }
 
-
-message ListDirectoryRes {
-    int32 id = 1;
+message ListDirectoryRes
+{
     repeated FileInfo nodes = 2;
 }
 
+message GetFileContentReq
+{
+    string filename = 1;
+}
 
+message Request
+{
+    uint64 id = 1;
+    ListDirectoryReq listDir = 2;
+}
 
-
+message Response
+{
+    uint64 id = 1;
+    ListDirectoryRes listDir = 2;
+}

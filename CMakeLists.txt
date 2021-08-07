@@ -17,6 +17,7 @@ if (MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /bigobj")
   add_compile_options(/w44101)
+  add_definitions(-D_WIN32_WINNT=0x0601)
 endif()
 
 # Add this project's cmake/ directory to the module path.

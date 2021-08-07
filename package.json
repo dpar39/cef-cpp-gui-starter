@@ -9,7 +9,8 @@
   "author": "Darien Pardinas Diaz",
   "license": "ISC",
   "dependencies": {
-    "jest": "^27.0.6"
+    "jest": "^27.0.6",
+    "protobufjs": "^6.11.2"
   },
   "devDependencies": {
     "ps-node": "^0.1.6"
