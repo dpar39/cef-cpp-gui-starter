@@ -21,6 +21,7 @@ class WebsocketSession : public std::enable_shared_from_this<WebsocketSession>
 
 public:
     std::function<void(beast::flat_buffer &)> onMessage;
+    std::function<void()> onClose;
 
 public:
     // Take ownership of the socket

@@ -13,3 +13,6 @@ void fail(boost::beast::error_code ec, char const * what);
 using StringSP = std::shared_ptr<const std::string>;
 
 StringSP toStringSP(const std::string & s);
+StringSP toStringSP(std::string && s);
+
+std::string resolvePath(const std::string & relPath);

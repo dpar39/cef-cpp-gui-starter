@@ -33,6 +33,8 @@ void WebsocketSession::onRead(beast::error_code ec, std::size_t bytesTransferred
     if (ec == websocket::error::closed)
     {
         onMessage = nullptr;
+        if (onClose)
+            onClose();
         return;
     }
 
@@ -65,7 +67,8 @@ void WebsocketSession::onSend(const StringSP & ss)
 
     // We are not currently writing, so send this immediately
     _ws.binary(true);
-    _ws.async_write(net::buffer(*_queue.front()),
+    const auto & msg = _queue.front();
+    _ws.async_write(net::buffer(msg->data(), msg->size()),
                     beast::bind_front_handler(&WebsocketSession::onWrite, shared_from_this()));
 }
 
@@ -80,6 +83,9 @@ void WebsocketSession::onWrite(beast::error_code ec, std::size_t)
 
     // Send the next message if any
     if (!_queue.empty())
-        _ws.async_write(net::buffer(*_queue.front()),
+    {
+        const auto & msg = _queue.front();
+        _ws.async_write(net::buffer(msg->data(), msg->size()),
                         beast::bind_front_handler(&WebsocketSession::onWrite, shared_from_this()));
+    }
 }

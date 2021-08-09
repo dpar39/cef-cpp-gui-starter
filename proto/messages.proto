@@ -5,7 +5,7 @@ package comms;
 message FileInfo
 {
     string name = 1;
-    uint64 size = 2;
+    int32 size = 2;
     bool isfile = 3;
     repeated FileInfo children = 4;
 }
@@ -13,12 +13,12 @@ message FileInfo
 message ListDirectoryReq
 {
     string directory = 1;
-    uint64 num_levels = 2;
+    int32 num_levels = 2;
 }
 
 message ListDirectoryRes
 {
-    repeated FileInfo nodes = 2;
+    repeated FileInfo nodes = 1;
 }
 
 message GetFileContentReq
@@ -28,12 +28,20 @@ message GetFileContentReq
 
 message Request
 {
-    uint64 id = 1;
     ListDirectoryReq listDir = 2;
+    GetFileContentReq getFileContent = 3;
 }
 
 message Response
 {
-    uint64 id = 1;
     ListDirectoryRes listDir = 2;
+}
+
+message Message {
+    int32 id = 1;
+    oneof message_type {
+        Request request = 2;
+        Response response = 3;
+    }
+    string method = 4;
 }

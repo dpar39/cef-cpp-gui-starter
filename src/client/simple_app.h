@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 
-class Server;
+class ServerApp;
 
 #include "include/cef_app.h"
 
@@ -21,5 +21,5 @@ private:
     IMPLEMENT_REFCOUNTING(SimpleApp);
 
 private:
-    std::shared_ptr<Server> _server;
+    std::shared_ptr<ServerApp> _server;
 };

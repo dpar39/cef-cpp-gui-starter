@@ -3,7 +3,8 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const ps = require('ps-node');
-const protobuf = require('protobufjs')
+
+const { RpcService } = require('../js/rpc');
 
 let serverProcess = null;
 // function isServerRunning() {
@@ -63,24 +64,13 @@ function startServer() {
 
 console.log(resolveFilePath('build_vs/server.exe'))
 
-function loadProtobuf() {
-    return new Promise((accept, reject) => {
-        protobuf.load('proto/messages.proto', (err, root) => {
-            if (err) {
-                reject(err);
-            } else {
-                accept(root);
-            }
-        });
-    });
-}
 
 describe("Comms test suite", () => {
-    let pb = null;
+    let rpc = null;
     beforeAll(async () => {
         console.log('Ready to start');
         await startServer();
-        pb = await loadProtobuf();
+        rpc = new RpcService(null);
     });
 
     afterAll(() => {
@@ -89,49 +79,13 @@ describe("Comms test suite", () => {
         }
     });
 
-    test("Test1", (done) => {
-        console.log('test goes here');
+    test("Test1", async () => {
+        let res = await rpc.makeRequest({ listDir: { directory: '.' } });
+        console.log(JSON.stringify(res));
+    });
 
-        let Request = pb.lookupType('comms.Request');
-        let Response = pb.lookupType('comms.Response');
-
-        const WebSocket = require('ws')
-        const url = 'ws://localhost:8100'
-        const connection = new WebSocket(url)
-        connection.binaryType = (typeof window === 'undefined') ? 'nodebuffer' : 'arraybuffer';
-
-        connection.onopen = () => {
-            // for (let i = 0; i < 100; ++i)
-            //     connection.send(`Message From Client ${i}`)
-
-
-            let req = { id: 123, listDir: { directory: '.' } }
-
-            var errMsg = Request.verify(req);
-            if (errMsg)
-                throw Error(errMsg)
-            let reqMsg = Request.create(req);
-            console.log(reqMsg)
-            let buffer = Request.encode(reqMsg).finish();
-            connection.send(buffer)
-
-        }
-
-        connection.onerror = (error) => {
-            console.log(`WebSocket error: ${error.message}`)
-        }
-
-        let k = 0;
-        connection.onmessage = (e) => {
-
-            let res = Response.decode(e.data);
-            console.log(JSON.stringify(res));
-            connection.close();
-        };
-
-        connection.onclose = () =>{
-            done();
-        };
+    test("Test2", (done) => {
+        done();
     });
 
 });

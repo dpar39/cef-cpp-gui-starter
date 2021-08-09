@@ -1,4 +1,4 @@
-#include "simple_app.h"
+﻿#include "simple_app.h"
 #include "simple_client.h"
 
 #include <string>
@@ -9,7 +9,7 @@
 #include "include/views/cef_window.h"
 #include "include/wrapper/cef_helpers.h"
 
-#include "Server.h"
+#include "ServerApp.h"
 
 namespace
 {
@@ -99,7 +99,7 @@ std::string GetApplicationDir()
 
 SimpleApp::SimpleApp()
 {
-    _server = std::make_shared<Server>(GetApplicationDir() + "/../../gui");
+    _server = std::make_shared<ServerApp>(GetApplicationDir() + "/../../gui");
 }
 
 CefRefPtr<CefBrowserProcessHandler> SimpleApp::GetBrowserProcessHandler()
