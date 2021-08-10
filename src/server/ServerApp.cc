@@ -1,17 +1,4 @@
-﻿//
-// Copyright (c) 2016-2019 Vinnie Falco (vinnie dot falco at gmail dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
-// Official repository: https://github.com/boostorg/beast
-//
-
-//------------------------------------------------------------------------------
-//
-// Example: Advanced server
-//
-//------------------------------------------------------------------------------
+﻿
 #include "ServerApp.h"
 
 #include <boost/asio/signal_set.hpp>
@@ -19,7 +6,6 @@
 
 #include <iostream>
 #include <memory>
-#include <string>
 #include <thread>
 
 #include "WebsocketSession.h"
@@ -108,7 +94,7 @@ void ServerApp::onWebsocketConnection(const WebsocketSessionPtr & ws)
         const auto & mutableBuffer = buffer.data();
         msgIn.ParseFromArray(mutableBuffer.data(), static_cast<int>(mutableBuffer.size()));
 
-        if (true)
+        if (false)
         {
             std::string json;
             google::protobuf::util::MessageToJsonString(msgIn, &json);
@@ -165,12 +151,24 @@ void ServerApp::callRpc(comms::Request * req, ResponseCallback callback, Websock
 
 void ServerApp::handleRpcRequest(WebsocketSession * wss, const comms::Request & req, comms::Response & res)
 {
-    auto * ld = new comms::ListDirectoryRes();
-    auto n = ld->add_nodes();
-    n->set_isfile(true);
-    n->set_size(4567);
-    n->set_name("this-file.txt");
-    res.set_allocated_listdir(ld);
+    if (req.has_echo())
+    {
+        auto echo = new comms::Echo();
+        echo->set_text(req.echo().text());
+        res.set_allocated_echo(echo);
+        return;
+    }
+
+    if (req.has_listdir())
+    {
+        auto * ld = new comms::ListDirectoryRes();
+        auto n = ld->add_nodes();
+        n->set_isfile(true);
+        n->set_size(4567);
+        n->set_name("this-file.txt");
+        res.set_allocated_listdir(ld);
+        return;
+    }
 }
 
 void ServerApp::sendMessage(WebsocketSession * wss, comms::Message & msg)

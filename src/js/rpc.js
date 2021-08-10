@@ -27,13 +27,24 @@ class RpcService {
             await this.loadProtobuf();
             let msg = this.Message.decode(e.data);
             let obj = this.Message.toObject(msg);
-            console.log(JSON.stringify(obj));
             let msgId = obj.id;
             let cb = this.pendingRequests.get(msgId);
             if (cb.acceptCb)
-                cb.acceptCb(msg.response);
+                cb.acceptCb(obj.response);
             this.pendingRequests.delete(msgId);
         }
+    }
+
+    async close() {
+        return new Promise((accept, reject) => {
+            if (this.ws.readyState === WebSocket.CLOSED) {
+                accept(true);
+            }
+            this.ws.onclose = (e) => {
+                accept(true)
+            };
+            this.ws.close();
+        }); 
     }
 
     loadProtobuf() {
@@ -57,15 +68,16 @@ class RpcService {
             if (this.ws.readyState === WebSocket.OPEN) {
                 accept(true);
             }
-            this.ws.onopen = (e) => accept(true);
+            this.ws.onopen = (e) => {
+                console.log('Websocket ready');
+                accept(true)
+            };
         });
     }
 
     async makeRequest(request) {
         await this.socketReady();
-        console.log('Websocket ready');
         await this.loadProtobuf();
-        console.log('Proto loaded');
         let id = ++this.requestId;
         let msg = { id: id, request: request };
         let errMsg = this.Message.verify(msg);

@@ -30,7 +30,7 @@
         {
             "label": "CMake Generate (release)",
             "type": "shell",
-            "command": "cmake -DCMAKE_BUILD_TYPE=Release -H${workspaceFolder} -B${workspaceFolder}/build_release -G Ninja",
+            "command": "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -H${workspaceFolder} -B${workspaceFolder}/build_release -G Ninja",
             "problemMatcher": []
         },
         {

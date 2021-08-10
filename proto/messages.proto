@@ -2,44 +2,53 @@ syntax = "proto3";
 
 package comms;
 
-message FileInfo
-{
+message FileInfo {
     string name = 1;
     int32 size = 2;
     bool isfile = 3;
     repeated FileInfo children = 4;
 }
 
-message ListDirectoryReq
-{
+message ListDirectoryReq {
     string directory = 1;
     int32 num_levels = 2;
 }
 
-message ListDirectoryRes
-{
+message ListDirectoryRes {
     repeated FileInfo nodes = 1;
 }
 
-message GetFileContentReq
-{
+message GetFileContentReq {
     string filename = 1;
 }
 
-message Request
-{
-    ListDirectoryReq listDir = 2;
-    GetFileContentReq getFileContent = 3;
+message GetFileContentRes {
+    bytes content = 1;
 }
 
-message Response
-{
-    ListDirectoryRes listDir = 2;
+message Echo {
+    string text = 1;
+}
+
+message Request {
+    oneof RequestType {
+        Echo echo = 1;
+        ListDirectoryReq listDir = 2;
+        GetFileContentReq getFileContent = 3;
+    }
+}
+
+message Response {
+    oneof ResponseType {
+        Echo echo = 1;
+        ListDirectoryRes listDir = 2;
+        GetFileContentRes getFileContent = 3;
+    }
 }
 
 message Message {
     int32 id = 1;
-    oneof message_type {
+    oneof MessageType {
         Request request = 2;
         Response response = 3;
     }

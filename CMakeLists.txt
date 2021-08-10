@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.12.0)
 
+message (STATUS "Configuring with cmake ${CMAKE_VERSION}")
+
 set(CEF_TARGET cef-gui)
 project(${CEF_TARGET} CXX)
 
@@ -43,7 +45,20 @@ include(ExternalProtobuf)
 ResolveProtobuf("3.17.3" ${THIRD_PARTY_DIR})
 set(Protobuf_USE_STATIC_LIBS ON)
 
+string(TOLOWER ${CMAKE_BUILD_TYPE} BUILD_CONFIG_LOWER)
+string(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_NAME_LOWER)
+set(BUILD_NAME_SUFFIX ${SYSTEM_NAME_LOWER}_${BUILD_CONFIG_LOWER})
+set(THIRD_PARTY_INSTALL_DIR ${THIRD_PARTY_DIR}/install_${BUILD_NAME_SUFFIX})
+
+list(APPEND CMAKE_PREFIX_PATH "${THIRD_PARTY_INSTALL_DIR}")
 find_package(Protobuf REQUIRED)
+
+# get_cmake_property(_variableNames VARIABLES)
+# list (SORT _variableNames)
+# foreach (_variableName ${_variableNames})
+#     message(STATUS "${_variableName}=${${_variableName}}")
+# endforeach()
+
 # generate c++ bindings
 set(PROTOS_GEN_DIR "${CPP_SRC_DIR}/outpb")
 execute_process(COMMAND ${Protobuf_PROTOC_EXECUTABLE} 
@@ -82,9 +97,5 @@ file(GLOB TEST_CC_FILES "${CPP_SRC_DIR}/test/*.cc")
 add_executable(${TESTS_EXE_NAME} ${TEST_CC_FILES})
 target_link_libraries(${TESTS_EXE_NAME} GTest::gtest GTest::gtest_main ${HTTP_WS_LIB_NAME})
 
-# get_cmake_property(_variableNames VARIABLES)
-# list (SORT _variableNames)
-# foreach (_variableName ${_variableNames})
-#     message(STATUS "${_variableName}=${${_variableName}}")
-# endforeach()
+
 

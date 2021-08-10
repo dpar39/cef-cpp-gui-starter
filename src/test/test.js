@@ -45,7 +45,7 @@ function startServer() {
     return new Promise(async (accept, reject) => {
         let isRunning = true; //await isServerRunning();
         if (!isRunning) {
-            const exePath = resolveFilePath('build_vs/server.exe');
+            const exePath = resolveFilePath('build_release/server.exe');
             console.log(`Spawning ${exePath}`)
             serverProcess = spawn(exePath);
             let accepted = false;
@@ -62,7 +62,7 @@ function startServer() {
     });
 }
 
-console.log(resolveFilePath('build_vs/server.exe'))
+console.log(resolveFilePath('build_release/server.exe'))
 
 
 describe("Comms test suite", () => {
@@ -73,15 +73,32 @@ describe("Comms test suite", () => {
         rpc = new RpcService(null);
     });
 
-    afterAll(() => {
+    afterAll(async () => {
         if (serverProcess) {
             serverProcess.kill();
         }
+        await rpc.close();
     });
 
-    test("Test1", async () => {
-        let res = await rpc.makeRequest({ listDir: { directory: '.' } });
-        console.log(JSON.stringify(res));
+    test("Test Echo Rpc sync", async () => {
+        for (let i = 0; i < 2000; ++i) {
+            let text = `This is echo ${i}`;
+            let res = await rpc.makeRequest({ echo: { text: text } });
+            expect(res.echo.text).toBe(text);
+        }
+
+    });
+    test("Test Echo Rpc Async", async () => {
+        let promises = [];
+        let texts = [];
+        let text  = '.'.repeat(1000);
+        for (let i = 0; i < 10000; ++i) {
+            promises.push(rpc.makeRequest({ echo: { text: text } }));
+        }
+        results = await Promise.all(promises);
+        // for (let i = 0; i < 2000; ++i) {
+        //     expect(results[i].echo.text).toBe(texts[i]);
+        // }
     });
 
     test("Test2", (done) => {
